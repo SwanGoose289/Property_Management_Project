@@ -1,8 +1,12 @@
 #include "Manager.h"
-int main(){
-    Person* person=(Person*)malloc(sizeof(Person));
-    Server* server=(Server*)malloc(sizeof(Server));
-    Owner* owner=(Owner*)malloc(sizeof(Owner));
+int main() {
+    int res = Init_imfor();
+    if (res == -1) {
+        printf("系统异常！\n");
+        exit(1);
+    }
+    Imfor_Read();
+    Person* person = (Person*)malloc(sizeof(Person));
     AddImfor();
     return 0;
 }
