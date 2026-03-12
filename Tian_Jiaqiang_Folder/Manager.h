@@ -35,10 +35,11 @@ struct Imformation {//无机物信息
 void Save(Person* head);//存入文件
 void Imfor_Read();//读取文件中的imfor信息
 void AddImfor();//添加人员信xi
-int Init_imfor();//初始化imfor对象
+Imfor* Init_imfor(Imfor* imfor); //初始化imfor对象//初始化imfor对象
 void Init_Person(Person* person);//初始化人
 Person* ADD_TO_LIST(Person* head,Person* person);//加入链表
 Person* Delimfor(Person* head);//从链表中删除对象
-Imfor ModImfor(O_LIST owner_head, S_LIST server_head);//更改人员信息
+Imfor ModImfor(Person* head,Imfor* imfor);//更改信息
+Person* Mod_Person();//更改人员
 
 
