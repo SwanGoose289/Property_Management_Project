@@ -451,7 +451,7 @@ Person* ModImfor(Person* head, Imfor* imfor) {//更改信息
                 Person* newperson = Mod_Person(node);
                 head = newperson;
                 newperson->next = NULL;
-                
+
                 printf("修改成功！\n");
                 Save(head);
                 return head;
@@ -462,7 +462,7 @@ Person* ModImfor(Person* head, Imfor* imfor) {//更改信息
             Person* newperson = Mod_Person(node);
             head = newperson;
             newperson->next = nextnode;
-            
+
             printf("修改成功！\n");
             Save(head);
             return head;
@@ -474,7 +474,7 @@ Person* ModImfor(Person* head, Imfor* imfor) {//更改信息
                 Person* freenode = node->next;
                 node->next = newperson;
                 newperson->next = nextnode;
-                
+
                 printf("修改成功！\n");
                 Save(head);
                 return head;
@@ -484,7 +484,7 @@ Person* ModImfor(Person* head, Imfor* imfor) {//更改信息
                 Person* freenode = node->next;
                 node->next = newperson;
                 newperson->next = NULL;
-                
+
                 printf("修改成功！\n");
                 Save(head);
                 return head;
@@ -732,183 +732,183 @@ void FindPerson() {//查询人员信息
         break;
     }
 }
-void Sta_Imfor(Person* head){
-    if(head==NULL){
+void Sta_Imfor(Person* head) {
+    if (head == NULL) {
         printf("无法统计！\n");
         return;
     }
     printf("请输入你要统计的维度:\n1.职业 2.年龄 3.性别 4.住址 5.本年度已缴费 6.本年度未缴费\n");
     int choice;
-    Person* node=head;
-    int sum=0;
-    scanf("%d",&choice);
-    switch(choice){
+    Person* node = head;
+    int sum = 0;
+    scanf("%d", &choice);
+    switch (choice) {
+    case 1:
+        printf("请输入你要统计的职业：\n1.业主 2.管家 3.保安 4.保洁\n");
+        char sta_career[MAX];
+        if (strcmp(sta_career, "业主") == 0) {
+            while (node != NULL) {
+                if (strcmp(node->Career, sta_career) == 0) {
+                    printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num, node->Career);
+                    sum++;
+                }
+                node = node->next;
+            }
+            printf("统计结束，共%d人", sum);
+        }
+        if (strcmp(sta_career, "管家") == 0) {
+            while (node != NULL) {
+                if (strcmp(node->Career, sta_career) == 0) {
+                    printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num, node->Career);
+                    sum++;
+                }
+                node = node->next;
+            }
+            printf("统计结束，共%d人", sum);
+        }
+        if (strcmp(sta_career, "保安") == 0) {
+            while (node != NULL) {
+                if (strcmp(node->Career, sta_career) == 0) {
+                    printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num, node->Career);
+                    sum++;
+                }
+                node = node->next;
+            }
+            printf("统计结束，共%d人", sum);
+        }
+        if (strcmp(sta_career, "保洁") == 0) {
+            while (node != NULL) {
+                if (strcmp(node->Career, sta_career) == 0) {
+                    printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num, node->Career);
+                    sum++;
+                }
+                node = node->next;
+            }
+            printf("统计结束，共%d人", sum);
+        }
+        scanf("%s", sta_career);
+        break;
+    case 2:
+        printf("请输入查找年龄的下限:\n");
+        int min_age;
+        scanf("%d", &min_age);
+        printf("请输入查找年龄的上限:\n");
+        int max_age;
+        scanf("%d", &max_age);
+        while (node != NULL) {
+            if (node->M_age >= min_age && node->M_age <= max_age) {
+                printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num, node->Career);
+            }
+            sum++;
+        }
+        printf("统计结束，共%d人", sum);
+        break;
+    case 3:
+        printf("请输入要统计的性别：1.男 2.女\n");
+        int sta_sex_choice;
+        scanf("%d", &sta_sex_choice);
+        switch (sta_sex_choice)
+        {
         case 1:
-            printf("请输入你要统计的职业：\n1.业主 2.管家 3.保安 4.保洁\n");
-            char sta_career[MAX];
-            if(strcmp(sta_career,"业主")==0){
-                while(node!=NULL){
-                    if(strcmp(node->Career,sta_career)==0){
-                        printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num,node->Career);
-                        sum++;
-                    }
-                    node=node->next;
-                }
-                printf("统计结束，共%d人",sum);
-            }
-            if(strcmp(sta_career,"管家")==0){
-                while(node!=NULL){
-                    if(strcmp(node->Career,sta_career)==0){
-                        printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num,node->Career);
-                        sum++;
-                    }
-                    node=node->next;
-                }
-                printf("统计结束，共%d人",sum);
-            }
-            if(strcmp(sta_career,"保安")==0){
-                while(node!=NULL){
-                    if(strcmp(node->Career,sta_career)==0){
-                        printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num,node->Career);
-                        sum++;
-                    }
-                    node=node->next;
-                }
-                printf("统计结束，共%d人",sum);
-            }
-            if(strcmp(sta_career,"保洁")==0){
-                while(node!=NULL){
-                    if(strcmp(node->Career,sta_career)==0){
-                        printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num,node->Career);
-                        sum++;
-                    }
-                    node=node->next;
-                }
-                printf("统计结束，共%d人",sum);
-            }
-            scanf("%s",sta_career);
-            break;
-        case 2:
-            printf("请输入查找年龄的下限:\n");
-            int min_age;
-            scanf("%d",&min_age);
-            printf("请输入查找年龄的上限:\n");
-            int max_age;
-            scanf("%d",&max_age);
-            while(node!=NULL){
-                if(node->M_age>=min_age&&node->M_age<=max_age){
-                    printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num,node->Career);
+            while (node != NULL) {
+                if (strcmp(node->M_sex, "男") == 0) {
+                    printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num, node->Career);
                 }
                 sum++;
             }
-            printf("统计结束，共%d人",sum);
+            printf("统计结束，共%d人", sum);
             break;
-        case 3:
-            printf("请输入要统计的性别：1.男 2.女\n");
-            int sta_sex_choice;
-            scanf("%d",&sta_sex_choice);
-            switch (sta_sex_choice)
-            {
-                case 1:
-                    while(node!=NULL){
-                        if(strcmp(node->M_sex,"男")==0){
-                            printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num,node->Career);
-                        }
-                        sum++;
-                    }
-                    printf("统计结束，共%d人",sum);
-                    break;
-                case 2:
-                    while(node!=NULL){
-                        if(strcmp(node->M_sex,"女")==0){
-                            printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num,node->Career);
-                        }
-                        sum++;
-                    }
-                    printf("统计结束，共%d人",sum);
-                default:
-                    printf("输入错误!已退出\n");
-                    break;
+        case 2:
+            while (node != NULL) {
+                if (strcmp(node->M_sex, "女") == 0) {
+                    printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num, node->Career);
                 }
-            break;
-        case 4:
-            printf("请输入要统计的楼宇：\n");
-            int sta_building;
-            scanf("%d",&sta_building);
-            while(node!=NULL){
-                if(node->M_area==sta_building){
-                    printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num,node->Career);
-                    sum++;
-                }
-                node=node->next;
+                sum++;
             }
-            printf("统计结束，共%d人",sum);
-        break;
-        case 5:
-        break;
-        case 6:
-        break;
+            printf("统计结束，共%d人", sum);
         default:
+            printf("输入错误!已退出\n");
+            break;
+        }
+        break;
+    case 4:
+        printf("请输入要统计的楼宇：\n");
+        int sta_building;
+        scanf("%d", &sta_building);
+        while (node != NULL) {
+            if (node->M_area == sta_building) {
+                printf("姓名：%s 年龄：%d 性别：%s 电话号：%lld 工作：%s\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num, node->Career);
+                sum++;
+            }
+            node = node->next;
+        }
+        printf("统计结束，共%d人", sum);
+        break;
+    case 5:
+        break;
+    case 6:
+        break;
+    default:
         break;
     }
 }
-void maintain_password(Person* head){
-    Person* node=head;
-    while(node!=NULL){
-        printf("姓名：%s 电话：%lld 密码：%lld\n",node->M_name,node->M_phone_num,node->password);
-        node=node->next;
+void maintain_password(Person* head) {
+    Person* node = head;
+    while (node != NULL) {
+        printf("姓名：%s 电话：%lld 密码：%lld\n", node->M_name, node->M_phone_num, node->password);
+        node = node->next;
     }
     printf("请输入你要操作的对象姓名：\n");
     char doname[MAX];
-    scanf("%s",doname);
-    Person* newnode=head;
-    while(newnode!=NULL){
-        if(strcmp(newnode->M_name,doname)==0){
-            printf("姓名：%s 电话：%lld 密码：%lld\n",newnode->M_name,newnode->M_phone_num,newnode->password);
+    scanf("%s", doname);
+    Person* newnode = head;
+    while (newnode != NULL) {
+        if (strcmp(newnode->M_name, doname) == 0) {
+            printf("姓名：%s 电话：%lld 密码：%lld\n", newnode->M_name, newnode->M_phone_num, newnode->password);
             printf("1.修改 2.重置");
             int choice;
-            scanf("%d",&choice);
-            switch(choice){
+            scanf("%d", &choice);
+            switch (choice) {
+            case 1:
+                printf("请输入更改后的密码：\n");
+                long long newpassword;
+                scanf("%lld", &newpassword);
+                printf("请确认新密码:\n");
+                long long rel_newpassword;
+                scanf("%lld", &rel_newpassword);
+                if (newpassword == rel_newpassword) {
+                    newnode->password = newpassword;
+                    printf("修改成功！\n");
+                }
+                else {
+                    printf("修改失败！\n");
+                }
+                break;
+            case 2:
+                printf("是否重置？1.yes 2.no\n");
+                int M_choice;
+                scanf("%d", &M_choice);
+                switch (M_choice)
+                {
                 case 1:
-                    printf("请输入更改后的密码：\n");
-                    long long newpassword;
-                    scanf("%lld",&newpassword);
-                    printf("请确认新密码:\n");
-                    long long rel_newpassword;
-                    scanf("%lld",&rel_newpassword);
-                    if(newpassword==rel_newpassword){
-                        newnode->password=newpassword;
-                        printf("修改成功！\n");
-                    }
-                    else{
-                        printf("修改失败！\n");
-                    }
+                    newnode->password = 11111111;
+                    printf("重置成功！\n");
                     break;
                 case 2:
-                    printf("是否重置？1.yes 2.no\n");
-                    int M_choice;
-                    scanf("%d",&M_choice);
-                    switch (M_choice)
-                    {
-                    case 1:
-                        newnode->password=11111111;
-                        printf("重置成功！\n");
-                        break;
-                    case 2:
-                        printf("已退出\n");
-                        break;
-                    default:
-                        printf("输入错误，已退出\n");
-                        break;
-                    }
+                    printf("已退出\n");
                     break;
                 default:
                     printf("输入错误，已退出\n");
                     break;
+                }
+                break;
+            default:
+                printf("输入错误，已退出\n");
+                break;
             }
             return;
         }
-        newnode=newnode->next;
+        newnode = newnode->next;
     }
     printf("找不到对象！\n");
     return;
