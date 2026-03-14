@@ -586,137 +586,358 @@ static void zfc_to_rq(const char* s, int d[3]) {
 static int bj_rq(int d1[3], int d2[3]) {
 	return (d1[0] == d2[0] && d1[1] == d2[1] && d1[2] == d2[2]) ? 1 : 0;
 }
+// 工具函数：格式化输出查询结果行
+static void print_fee_row(const fee* p) {
+	char status[10];
+	strcpy(status, strcmp(p->yn, "y") == 0 ? "已缴费" : "未缴费");
+	char pay_date[20];
+	strcpy(pay_date, strcmp(p->yn, "y") == 0 ? p->date2 : "——");
+	printf("| %-15s | %-8s | %-6s | %-15s |\n",
+		p->date, p->sum, status, pay_date);
+}
 
-// 1——按时间简单查询（精确）
+// 工具函数：打印查询表头
+static void print_query_header(const char* title) {
+	printf("\n==================== %s ====================\n", title);
+	printf("| %-15s | %-8s | %-6s | %-15s |\n", "账单日期", "金额(元)", "状态", "缴费日期");
+	printf("|-----------------|----------|--------|-----------------|\n");
+}
+
+// 工具函数：打印无结果提示
+static void print_no_result() {
+	printf("| %-46s |\n", "无匹配记录");
+	printf("==========================================================\n");
+}
+
+// 1.按时间精确查询（支持账单日期/缴费日期）
 void cx_by_shijian_jiandan(const char* rq) {
+	int query_type;
+	printf("请选择查询时间维度：\n1. 账单日期  2. 缴费日期\n");
+	scanf("%d", &query_type);
+	clean();
+
 	int mubiao[3], dangqian_rq[3];
 	zfc_to_rq(rq, mubiao);
 	fee* p = head1->next1;
+	int count = 0;
+	const char* title = query_type == 1 ? "账单日期精确查询结果" : "缴费日期精确查询结果";
+	print_query_header(title);
 
 	while (p) {
 		if (!strcmp(p->add1, current->add1) && !strcmp(p->add2, current->add2) && !strcmp(p->add3, current->add3)) {
-			zfc_to_rq(p->date, dangqian_rq);
+			// 根据选择的维度解析日期
+			if (query_type == 1) {
+				zfc_to_rq(p->date, dangqian_rq);
+			}
+			else {
+				// 缴费日期查询仅匹配已缴费记录
+				if (strcmp(p->yn, "n") == 0) {
+					p = p->next1;
+					continue;
+				}
+				zfc_to_rq(p->date2, dangqian_rq);
+			}
+
 			if (bj_rq(dangqian_rq, mubiao)) {
-				printf("%s %s %s\n", p->date, p->sum, p->yn);
+				print_fee_row(p);
+				count++;
 			}
 		}
 		p = p->next1;
 	}
-}
-//2——按时间模糊查询
-void cx_by_shijian_mohu(const char* gj) {
-	// 遍历缴费链表
-	fee* p = head1->next1;
-	// 输出查询标题，提升可读性
-	printf("\n===== 时间模糊查询结果（关键词：%s）=====\n", gj);
 
-	// 计算关键词长度，用于前缀匹配
+	if (count == 0) {
+		print_no_result();
+	}
+	else {
+		printf("==========================================================\n");
+	}
+}
+
+// 2.按时间模糊查询（支持账单日期/缴费日期）
+void cx_by_shijian_mohu(const char* gj) {
+	int query_type;
+	printf("请选择查询时间维度：\n1. 账单日期  2. 缴费日期\n");
+	scanf("%d", &query_type);
+	clean();
+
+	fee* p = head1->next1;
+	int count = 0;
 	int gj_len = strlen(gj);
+	const char* title = query_type == 1 ?
+		"账单日期模糊查询结果" : "缴费日期模糊查询结果";
+	print_query_header(title);
+	printf("查询关键词：%s\n", gj);
+	printf("| %-15s | %-8s | %-6s | %-15s |\n", "账单日期", "金额(元)", "状态", "缴费日期");
+	printf("|-----------------|----------|--------|-----------------|\n");
 
 	while (p != NULL) {
-		// 仅查询当前登录业主的缴费记录（匹配地址）
 		if (strcmp(p->add1, current->add1) == 0 &&
 			strcmp(p->add2, current->add2) == 0 &&
 			strcmp(p->add3, current->add3) == 0) {
 
-			// 核心模糊匹配逻辑：日期字符串前缀与关键词一致即匹配
-			if (strncmp(p->date, gj, gj_len) == 0) {
-				// 输出匹配到的记录（日期、金额、状态）
-				printf("日期：%s | 金额：%s元 | 状态：%s\n", p->date, p->sum, p->yn);
+			char* compare_str = NULL;
+			// 缴费日期模糊查询仅匹配已缴费记录
+			if (query_type == 2) {
+				if (strcmp(p->yn, "n") == 0) {
+					p = p->next1;
+					continue;
+				}
+				compare_str = p->date2;
+			}
+			else {
+				compare_str = p->date;
+			}
+
+			if (strncmp(compare_str, gj, gj_len) == 0) {
+				print_fee_row(p);
+				count++;
 			}
 		}
-		p = p->next1; // 遍历下一条记录
+		p = p->next1;
+	}
+
+	if (count == 0) {
+		print_no_result();
+	}
+	else {
+		printf("==========================================================\n");
 	}
 }
-// 3——.按金额简单查询（精确）
+
+// 3.按金额精确查询
 void cx_by_jine_jiandan(const char* je) {
 	fee* p = head1->next1;
+	int count = 0;
+	print_query_header("金额精确查询结果");
 
 	while (p) {
 		if (!strcmp(p->add1, current->add1) && !strcmp(p->add2, current->add2) && !strcmp(p->add3, current->add3)) {
 			if (!strcmp(p->sum, je)) {
-				printf("%s %s %s\n", p->date, p->sum, p->yn);
+				print_fee_row(p);
+				count++;
 			}
 		}
 		p = p->next1;
 	}
+
+	if (count == 0) {
+		print_no_result();
+	}
+	else {
+		printf("==========================================================\n");
+	}
 }
-// 4—— 金额模糊查询
+
+// 4.按金额模糊查询
 void cx_by_jine_mohu(const char* gj) {
 	fee* p = head1->next1;
-	printf("\n===== 金额模糊查询结果（关键词：%s）=====\n", gj);
+	int count = 0;
+	print_query_header("金额模糊查询结果");
+	printf("查询关键词：%s\n", gj);
+	printf("| %-15s | %-8s | %-6s | %-15s |\n", "账单日期", "金额(元)", "状态", "缴费日期");
+	printf("|-----------------|----------|--------|-----------------|\n");
 
 	while (p != NULL) {
 		if (strcmp(p->add1, current->add1) == 0 &&
 			strcmp(p->add2, current->add2) == 0 &&
 			strcmp(p->add3, current->add3) == 0) {
 
-			// 核心：金额字符串中包含关键词即匹配
 			if (strstr(p->sum, gj) != NULL) {
-				printf("日期：%s | 金额：%s元 | 状态：%s\n", p->date, p->sum, p->yn);
+				print_fee_row(p);
+				count++;
 			}
 		}
 		p = p->next1;
 	}
+
+	if (count == 0) {
+		print_no_result();
+	}
+	else {
+		printf("==========================================================\n");
+	}
 }
-// 5—— 状态+时间组合查询（仅精确匹配）
+
+// 5. 状态+时间组合查询（精准匹配，支持账单/缴费日期）
 void cx_by_zhuangtai_shijian(const char* zhuangtai, const char* rq) {
+	int query_type;
+	printf("请选择查询时间维度：\n1. 账单日期  2. 缴费日期\n");
+	scanf("%d", &query_type);
+	clean();
+
 	int mubiao[3], dangqian_rq[3];
 	zfc_to_rq(rq, mubiao);
 	fee* p = head1->next1;
+	int count = 0;
+	char status[10];
+	strcpy(status, strcmp(zhuangtai, "y") == 0 ? "已缴费" : "未缴费");
+	const char* time_type = query_type == 1 ? "账单日期" : "缴费日期";
+	char title[50];
+	sprintf(title, "状态+%s查询结果", time_type);
+	print_query_header(title);
+	printf("查询条件：状态=%s | %s=%s\n", status, time_type, rq);
+	printf("| %-15s | %-8s | %-6s | %-15s |\n", "账单日期", "金额(元)", "状态", "缴费日期");
+	printf("|-----------------|----------|--------|-----------------|\n");
 
 	while (p) {
 		if (!strcmp(p->add1, current->add1) && !strcmp(p->add2, current->add2) && !strcmp(p->add3, current->add3) && !strcmp(p->yn, zhuangtai)) {
-			zfc_to_rq(p->date, dangqian_rq);
+			// 缴费日期查询需过滤未缴费记录
+			if (query_type == 2 && strcmp(p->yn, "n") == 0) {
+				p = p->next1;
+				continue;
+			}
+
+			if (query_type == 1) {
+				zfc_to_rq(p->date, dangqian_rq);
+			}
+			else {
+				zfc_to_rq(p->date2, dangqian_rq);
+			}
+
 			if (bj_rq(dangqian_rq, mubiao)) {
-				printf("%s %s %s\n", p->date, p->sum, p->yn);
+				print_fee_row(p);
+				count++;
 			}
 		}
 		p = p->next1;
 	}
+
+	if (count == 0) {
+		print_no_result();
+	}
+	else {
+		printf("==========================================================\n");
+	}
 }
-// 6—— 状态+金额组合查询（仅精确匹配）
+
+// 6. 状态+金额组合查询（精准匹配）
 void cx_by_zhuangtai_jine(const char* zhuangtai, const char* je) {
 	fee* p = head1->next1;
+	int count = 0;
+	char status[10];
+	strcpy(status, strcmp(zhuangtai, "y") == 0 ? "已缴费" : "未缴费");
+	print_query_header("状态+金额查询结果");
+	printf("查询条件：状态=%s | 金额=%s元\n", status, je);
+	printf("| %-15s | %-8s | %-6s | %-15s |\n", "账单日期", "金额(元)", "状态", "缴费日期");
+	printf("|-----------------|----------|--------|-----------------|\n");
 
 	while (p) {
 		if (!strcmp(p->add1, current->add1) && !strcmp(p->add2, current->add2) && !strcmp(p->add3, current->add3) && !strcmp(p->yn, zhuangtai)) {
 			if (!strcmp(p->sum, je)) {
-				printf("%s %s %s\n", p->date, p->sum, p->yn);
+				print_fee_row(p);
+				count++;
 			}
 		}
 		p = p->next1;
 	}
+
+	if (count == 0) {
+		print_no_result();
+	}
+	else {
+		printf("==========================================================\n");
+	}
 }
-// 7—— 时间+金额组合查询（仅精确匹配）
+
+// 7. 时间+金额组合查询（精准匹配，支持账单/缴费日期）
 void cx_by_shijian_jine(const char* rq, const char* je) {
+	int query_type;
+	printf("请选择查询时间维度：\n1. 账单日期  2. 缴费日期\n");
+	scanf("%d", &query_type);
+	clean();
+
 	int mubiao_rq[3], dangqian_rq[3];
 	zfc_to_rq(rq, mubiao_rq);
 	fee* p = head1->next1;
+	int count = 0;
+	const char* time_type = query_type == 1 ? "账单日期" : "缴费日期";
+	char title[50];
+	sprintf(title, "%s+金额查询结果", time_type);
+	print_query_header(title);
+	printf("查询条件：%s=%s | 金额=%s元\n", time_type, rq, je);
+	printf("| %-15s | %-8s | %-6s | %-15s |\n", "账单日期", "金额(元)", "状态", "缴费日期");
+	printf("|-----------------|----------|--------|-----------------|\n");
 
 	while (p) {
 		if (!strcmp(p->add1, current->add1) && !strcmp(p->add2, current->add2) && !strcmp(p->add3, current->add3)) {
-			zfc_to_rq(p->date, dangqian_rq);
+			// 缴费日期查询过滤未缴费记录
+			if (query_type == 2 && strcmp(p->yn, "n") == 0) {
+				p = p->next1;
+				continue;
+			}
+
+			if (query_type == 1) {
+				zfc_to_rq(p->date, dangqian_rq);
+			}
+			else {
+				zfc_to_rq(p->date2, dangqian_rq);
+			}
+
 			if (bj_rq(dangqian_rq, mubiao_rq) && !strcmp(p->sum, je)) {
-				printf("%s %s %s\n", p->date, p->sum, p->yn);
+				print_fee_row(p);
+				count++;
 			}
 		}
 		p = p->next1;
 	}
+
+	if (count == 0) {
+		print_no_result();
+	}
+	else {
+		printf("==========================================================\n");
+	}
 }
-// 8—— 状态+时间+金额组合查询（仅精确匹配）
+
+// 8. 状态+时间+金额组合查询（精准匹配，支持账单/缴费日期）
 void cx_by_zhuangtai_shijian_jine(const char* zhuangtai, const char* rq, const char* je) {
+	int query_type;
+	printf("请选择查询时间维度：\n1. 账单日期  2. 缴费日期\n");
+	scanf("%d", &query_type);
+	clean();
+
 	int mubiao_rq[3], dangqian_rq[3];
 	zfc_to_rq(rq, mubiao_rq);
 	fee* p = head1->next1;
+	int count = 0;
+	char status[10];
+	strcpy(status, strcmp(zhuangtai, "y") == 0 ? "已缴费" : "未缴费");
+	const char* time_type = query_type == 1 ? "账单日期" : "缴费日期";
+	char title[50];
+	sprintf(title, "状态+%s+金额查询结果", time_type);
+	print_query_header(title);
+	printf("查询条件：状态=%s | %s=%s | 金额=%s元\n", status, time_type, rq, je);
+	printf("| %-15s | %-8s | %-6s | %-15s |\n", "账单日期", "金额(元)", "状态", "缴费日期");
+	printf("|-----------------|----------|--------|-----------------|\n");
 
 	while (p) {
 		if (!strcmp(p->add1, current->add1) && !strcmp(p->add2, current->add2) && !strcmp(p->add3, current->add3) && !strcmp(p->yn, zhuangtai)) {
-			zfc_to_rq(p->date, dangqian_rq);
+			// 缴费日期查询过滤未缴费记录
+			if (query_type == 2 && strcmp(p->yn, "n") == 0) {
+				p = p->next1;
+				continue;
+			}
+
+			if (query_type == 1) {
+				zfc_to_rq(p->date, dangqian_rq);
+			}
+			else {
+				zfc_to_rq(p->date2, dangqian_rq);
+			}
+
 			if (bj_rq(dangqian_rq, mubiao_rq) && !strcmp(p->sum, je)) {
-				printf("%s %s %s\n", p->date, p->sum, p->yn);
+				print_fee_row(p);
+				count++;
 			}
 		}
 		p = p->next1;
+	}
+
+	if (count == 0) {
+		print_no_result();
+	}
+	else {
+		printf("==========================================================\n");
 	}
 }
