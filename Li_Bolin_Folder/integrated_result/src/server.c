@@ -170,6 +170,45 @@ void addRecordTail(struct ServiceRecord r){
     record_count++;
 }
 
+void freeStaffList(){
+    StaffNode* p=staff_head;
+    while(p!=NULL){
+        StaffNode* temp=p;
+        p=p->next;
+        free(temp);
+    }
+    staff_head=NULL;
+    staff_count=0;
+}
+
+void freeOwnerList(){
+    OwnerNode* p=owner_head;
+    while(p!=NULL){
+        OwnerNode* temp=p;
+        p=p->next;
+        free(temp);
+    }
+    owner_head=NULL;
+    owner_count=0;
+}
+
+void freeRecordList(){
+    RecordNode* p=record_head;
+    while(p!=NULL){
+        RecordNode* temp=p;
+        p=p->next;
+        free(temp);
+    }
+    record_head=NULL;
+    record_count=0;
+}
+
+void free_all(){
+    freeStaffList();
+    freeOwnerList();
+    freeRecordList();
+}
+
 void saveStaffText(){
     FILE* fp=fopen(STAFF_FILE,"w");
     if(fp==NULL){
@@ -452,6 +491,7 @@ void load_all_text(){
 }
 
 void show_staff_menu(){
+    system("clear");
     printf("******************************\n");
     printf("********物业服务人员菜单********\n");
     printf("********1.我的         ********\n");
@@ -463,6 +503,7 @@ void show_staff_menu(){
 }
 
 void show_mine_menu(){
+    system("clear");
     printf("******************************\n");
     printf("********我的           ********\n");
     printf("********1.查看个人信息  ********\n");
@@ -514,6 +555,7 @@ void mine(int index,int id){
 }
 
 void show_query_menu(){
+    system("clear");
     printf("******************************\n");
     printf("********信息查询       ********\n");
     printf("********1.我的负责区域  ********\n");
@@ -556,6 +598,7 @@ void query(int index,int id){
 }
 
 void show_sort_menu(){
+    system("clear");
     printf("******************************\n");
     printf("********信息排序       ********\n");
     printf("********0.返回菜单     ********\n");
@@ -563,6 +606,7 @@ void show_sort_menu(){
 }
 
 void show_statistics_menu(){
+    system("clear");
     printf("******************************\n");
     printf("********信息统计       ********\n");
     printf("********1.按单一属性统计********\n");
@@ -687,6 +731,43 @@ int staff_login(int id,char* password){
         index++;
     }
     return -1;
+}
+
+//找回密码
+void find_password(){
+    int id;
+    char name[20]={0};
+    char phonenumber[15]={0};
+    printf("请输入您的姓名:");
+    while(getchar()!='\n'){
+
+    }
+    fgets(name,20,stdin);
+    int len1=strlen(name);
+    if(len1>0&&name[len1-1]=='\n'){
+        name[len1-1]='\0';
+    }
+    printf("请输入您的ID:");
+    scanf("%d",&id);
+    printf("请输入您的联系电话:");
+    while(getchar()!='\n'){
+
+    }
+    fgets(phonenumber,15,stdin);
+    int len2=strlen(phonenumber);
+    if(len2>0&&phonenumber[len2-1]=='\n'){
+        phonenumber[len2-1]='\0';
+    }
+    for(StaffNode* p=staff_head;p!=NULL;p=p->next){
+        if(p->data.id==id&&
+            strcmp(p->data.name,name)==0&&
+            strcmp(p->data.phonenumber,phonenumber)==0){
+                printf("验证成功!\n");
+                printf("您的密码是【%s】\n",p->data.password);
+                return;
+            }
+    }
+    printf("验证失败!请检查后重试。\n");
 }
 
 //查看个人信息
@@ -921,7 +1002,7 @@ int statistics_by_area(char* area,int index){
         }
         i++;
     }
-    if(s==NULL) return;
+    if(s==NULL) return 0;
     char* my_area=s->area;
     if(strstr(area,my_area)==NULL){
         printf("错误:目标区域必须在【%s】区域内!\n",my_area);
@@ -954,7 +1035,7 @@ int statistics_by_year_and_area(int year,char* area,int index){
         }
         i++;
     }
-    if(s==NULL) return;
+    if(s==NULL) return 0;
     char* my_area=s->area;
     if(strstr(area,my_area)==NULL){
         printf("错误:目标区域必须在【%s】区域内!\n",my_area);
@@ -1053,77 +1134,93 @@ void statistics_year_condition(int index){
 }
 
 // void test01(){
-//     staff_count++;
-//     strcpy(staff_list[0].name,"zhangsan");
-//     staff_list[0].id=1;
-//     strcpy(staff_list[0].password,"12345678");
-//     strcpy(staff_list[0].phonenumber,"12345678910");
-//     strcpy(staff_list[0].area,"A区");
-//     staff_list[0].position=CUSTOMER_SERVICE_SPECIALIST;
+//     struct Staff s;
+//     strcpy(s.name,"zhangsan");
+//     s.id=1;
+//     strcpy(s.password,"12345678");
+//     strcpy(s.phonenumber,"12345678910");
+//     strcpy(s.area,"A区");
+//     s.position=CUSTOMER_SERVICE_SPECIALIST;
+//     addStaffTail(s);
 // }
 
 // server.c 文件中的 server_system 函数替换为以下内容：
 
 void server_system(){
+    // printf("程序运行成功\n");
     load_all_text();
+    // test01();
     int index=0;
     int id;
-    while(1){
+    int flag=1;
+    while(flag){
+        int choice;
         printf("----------登录----------\n");
-        char password[9]={0};
-        printf("请输入ID:");
-        scanf("%d",&id);
-        // 清空输入缓冲区（处理 scanf 留下的换行符）
-        int c;
-        while ((c = getchar()) != '\n' && c != EOF);
+        printf("1.登录  2.找回密码  0.退出\n");
+        printf("请选择:");
+        scanf("%d",&choice);
+        switch(choice){
+            case 1:{
+                while(1){
+                    char password[9]={0};
+                    printf("请输入ID:");
+                    scanf("%d",&id);
+                    while(getchar()!='\n'){
 
-        printf("请输入密码:");
-        // 使用 scanf 读取密码，避免换行符干扰
-        scanf("%8s", password); // 最多读取8个字符，自动添加 '\0'
-        // 再次清空缓冲区，防止密码太长时残留字符
-        while ((c = getchar()) != '\n' && c != EOF);
-
-        if((index=staff_login(id,password)) >= 0){
-            printf("登录成功!\n");
+                    }
+                    printf("请输入密码:");
+                    fgets(password,9,stdin);
+                    int len=strlen(password);
+                    if(len>0&&password[len-1]=='\n'){
+                        password[len-1]='\0';
+                    }
+                    if((index=staff_login(id,password))>=0){
+                        printf("登录成功!\n");
+                        flag=0;
+                        break;
+                    }else{
+                        printf("ID或密码错误，请重新输入!\n");
+                        continue;
+                    }
+                }
+                break;
+            }
+            case 2:
+            find_password();
             break;
-        }else{
-            printf("ID或密码错误，请重新输入!\n");
-            continue;
+            case 0:
+            printf("退出成功，感谢您的使用!\n");
+            return 0;
+            default:
+            printf("输入错误!\n");
         }
     }
     int choice;
     while(1){
         show_staff_menu();
         printf("请选择:");
-        scanf("%d", &choice);
-        // 清空输入缓冲区
-        int c;
-        while ((c = getchar()) != '\n' && c != EOF);
-
+        scanf("%d",&choice);
         switch(choice){
             case 1:
-                mine(index,id);
-                break;
+            mine(index,id);
+            break;
             case 2:
-                query(index,id);
-                break;
+            query(index,id);
+            break;
             case 3:
-                // 信息排序功能预留
-                printf("信息排序功能正在开发中...\n");
-                printf("按回车键返回...");
-                while(getchar() != '\n');
-                getchar();
-                break;
+
+            break;
             case 4:
-                statistics(index,id);
-                break;
+            statistics(index,id);
+            break;
             case 0:
-                save_all_text();
-                printf("退出成功，感谢您的使用!\n");
-                return;
+            save_all_text();
+            free_all();
+            printf("退出成功，感谢您的使用!\n");
+            return 0;
             default:
-                printf("输入错误!\n");
-                break;
+            printf("输入错误!\n");
         }
     }
+    return 0;
 }
