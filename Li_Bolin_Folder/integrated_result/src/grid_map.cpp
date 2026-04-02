@@ -3,7 +3,11 @@
 grid_map::grid_map(){}
 
 void grid_map::process_raw_image(const std::string & filename){
+    std::cout << "欢迎使用小区导航服务" << std::endl;
+    std::cout << "我们将展示两张图，一张图为彩色参考图，一张图为黑白二值图" << std::endl;
+    std::cout << "左键设置起点，右键设置终点，空格清空" << std::endl;
     cv::Mat gray_image = cv::imread(filename,cv::IMREAD_GRAYSCALE);
+    display_map = cv::imread("community_raw_map.png", cv::IMREAD_COLOR);
     int a = gray_image.cols;
     int b = gray_image.rows;
     grid_width = gray_image.cols / block_size;
@@ -109,11 +113,13 @@ void grid_map::create_potential_cost_map(){
 void grid_map::interactive_interface(){
     cv::namedWindow("GUI display",cv::WINDOW_AUTOSIZE);
     cv::setMouseCallback("GUI display",on_mouse,this);
+    cv::namedWindow("display_map",cv::WINDOW_AUTOSIZE);
     final_image = visualized_map.clone();
     lp.get_map_infomation(grid_width,grid_height,potential_cost_map,mapping);
     ms.get_information(potential_cost_map,grid_width,grid_height,mapping);
     while(true){
         cv::imshow("GUI display",final_image);
+        cv::imshow("display_map",display_map);
         int key = cv::waitKey(1);
         //按空格键清除操作
         if(key==32){
@@ -123,6 +129,7 @@ void grid_map::interactive_interface(){
         }
     }
     cv::destroyWindow("GUI display");
+    cv::destroyWindow("display_map");
 }
 
 void grid_map::reset_image(){
@@ -166,7 +173,8 @@ void grid_map::handle_mouse_event(int event,int x,int y){
         std::ostringstream stream;
         stream << std::fixed << std::setprecision(3) << time_duration;
         if(report_count==0){
-            lp.log_info("Time: " + stream.str() + "ms");
+            std::cout << "--------" << std::endl;
+            lp.log_info("您的路径已规划完毕\n规划耗时为 " + stream.str() + "ms");
             report_count = report_count + 1;
         }
         //将路径转化为现实中的路径
@@ -187,6 +195,16 @@ void grid_map::handle_mouse_event(int event,int x,int y){
         };
         cv::rectangle(final_image,cv::Rect(start_x*prolong*block_size,start_y*prolong*block_size,prolong*block_size*2,prolong*block_size*2),cv::Scalar(0,255,0),cv::FILLED);
         cv::rectangle(final_image,cv::Rect(goal_x*prolong*block_size,goal_y*prolong*block_size,prolong*block_size*2,prolong*block_size*2),cv::Scalar(255,0,0),cv::FILLED);
+        //统计路径长度并发布相关信息
+        int num = static_cast<int>(final_path.size());
+        double total_dist = 0.0;
+        for(int i = 0;i<num-1;i++){
+            total_dist = total_dist + std::hypot(final_path[i+1].first-final_path[i].first,final_path[i+1].second-final_path[i].second);
+        }
+        total_dist = total_dist * 6.0;
+        std::cout << "全程约" << total_dist << "米" << std::endl;
+        std::cout << "出发点坐标为 (" << start_x << "," << start_y << ")" << std::endl;
+        std::cout << "终点坐标为 (" << goal_x << "," << goal_y << ")" << std::endl;
     }
 }
 

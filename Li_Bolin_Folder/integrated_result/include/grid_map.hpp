@@ -51,6 +51,7 @@ class grid_map{
     int goal_x = -1;//目标点x坐标
     int goal_y = -1;//目标点y坐标
     float mapping = 0.05f;
+    cv::Mat display_map;//展示地图
     std::vector<std::pair<float,float>> real_path;
     minisnap ms;
     std::vector<std::pair<float,float>> final_path;
