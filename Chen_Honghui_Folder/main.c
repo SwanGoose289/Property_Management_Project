@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
+#include<time.h>
 #define MAX_STAFF 100
 #define MAX_OWNER 10000
 #define MAX_RECORD 1000
@@ -14,7 +15,7 @@ typedef enum
     CUSTOMER_SERVICE_SPECIALIST,//客服专员
     SECURITY_OFFICER,//保安
     CLEANER,//清洁工
-    BUILDING_BULTER//楼栋管家
+    BUILDING_BULTER//楼栋管家--
 }PositionType;
 
 void show_my_info(int index);
@@ -31,6 +32,11 @@ int statistics_by_area(char* area,int index);
 int statistics_by_year_and_area(int year,char* area,int index);
 void statistics_2026_unpaid(int index);
 void statistics_year_condition(int index);
+void check_birthday_and_care();
+void edit_owner_profile(int index);
+void query_owner_by_tag();
+void query_birthday_this_month();
+void statistics_by_tags();
 
 // struct Property_Manager//物业经理
 // {
@@ -87,6 +93,10 @@ struct Owner
     char address[50];
     struct PaymentRecord pr[20];
     int payment_count;
+    char tags[3][20];//最多三个标签
+    int tag_count;
+    char birthday[20];
+    char care_date[20];//特殊关照日
 };
 
 struct ServiceRecord//服务记录
@@ -278,11 +288,18 @@ void saveOwnerText(){
     }
     fprintf(fp,"%d\n",owner_count);
     for(OwnerNode* p=owner_head;p!=NULL;p=p->next){
-        fprintf(fp,"%s %d %s %d\n",
+        fprintf(fp,"%s %d %s %d %d %s %s\n",
                 p->data.name,
                 p->data.id,
                 p->data.address,
-                p->data.payment_count);
+                p->data.payment_count,
+                p->data.tag_count,
+                p->data.birthday,
+                p->data.care_date);
+        for(int i=0;i<p->data.tag_count;i++){
+            fprintf(fp,"%s ",p->data.tags[i]);
+        }
+        fprintf(fp,"\n");
         for(int j=0;j<p->data.payment_count;j++){
             fprintf(fp,"%d %d\n",
                     p->data.pr[j].payment_year,
@@ -308,13 +325,26 @@ void loadOwnerText(){
     owner_count=0;
     for(int i=0;i<real_count;i++){
         struct Owner o;
-        if(fscanf(fp,"%s %d %s %d",
+        memset(o.tags,0,sizeof(o.tags));
+        o.tag_count=0;
+        strcpy(o.birthday,"");
+        strcpy(o.care_date,"");
+        if(fscanf(fp,"%s %d %s %d %d %s %s",
                 o.name,
                 &o.id,
                 o.address,
-                &o.payment_count)!=4){
+                &o.payment_count,
+                &o.tag_count,
+                o.birthday,
+                o.care_date)!=7){
                     break;
                 }
+        while(getc(fp)!='\n'){
+
+        }
+        for(int t=0;t<o.tag_count;t++){
+            fscanf(fp,"%s",o.tags[t]);
+        }
         for(int j=0;j<o.payment_count;j++){
             if(fscanf(fp,"%d %d",
                     &o.pr[j].payment_year,
@@ -476,6 +506,9 @@ void show_query_menu(){
     printf("********3.查业主所有缴费********\n");
     printf("********4.查业主某年缴费********\n");
     printf("********5.查某年未缴费业主********\n");
+    printf("********6.编辑业主标签/信息********\n");
+    printf("********7.按标签筛选业主  ********\n");
+    printf("********8.查看本月生日业主********\n");
     printf("********0.返回菜单     ********\n");
     printf("******************************\n");
 }
@@ -525,6 +558,15 @@ void query(int index,int id){
                 query_unpaid_by_year(year, index);
                 break;
             }
+            case 6:
+                edit_owner_profile(index);
+                break;
+            case 7:
+                query_owner_by_tag();
+                break;
+            case 8:
+                query_birthday_this_month();
+                break;
             case 0:
                 printf("返回菜单...\n");
                 return;
@@ -675,6 +717,7 @@ void show_statistics_menu(){
     printf("********2.按多属性统计 ********\n");
     printf("********3.预设统计     ********\n");
     printf("********4.按条件统计   ********\n");
+    printf("********5.按业主标签统计  ********\n");
     printf("********0.返回菜单     ********\n");
     printf("******************************\n");
 }
@@ -761,6 +804,9 @@ void statistics(int index,int id){
                 statistics_year_condition(index);
                 break;
             }
+            case 5:
+            statistics_by_tags();
+            break;
             case 0:
             printf("返回菜单...\n");
             return;
@@ -944,6 +990,20 @@ void query_my_area(int index){
                     p->data.name,
                     p->data.id,
                     p->data.address);
+            if(p->data.tag_count>0){
+                printf("\t标签:");
+                for(int i=0;i<p->data.tag_count;i++){
+                    printf("[%s] ", p->data.tags[i]);
+                }
+                printf("\n");
+            }
+            if(strlen(p->data.birthday)>0){
+                printf("\t生日: %s\n", p->data.birthday);
+            }
+            if(strlen(p->data.care_date)>0){
+                printf("\t关怀日: %s\n", p->data.care_date);
+            }
+            printf("\t---\n");
         }
     }
     if(!found_count) printf("该区域暂无业主\n");
@@ -1203,6 +1263,249 @@ void statistics_year_condition(int index){
     printf("%d年及以后存在未缴费记录的业主共%d人\n",start_year,count);
 }
 
+//新增亮点函数
+void check_birthday_and_care(){
+    time_t t=time(NULL);
+    struct tm* tm=localtime(&t);
+    char today[20];
+    sprintf(today,"%02d-%02d",tm->tm_mon+1,tm->tm_mday);
+    int has_birthday=0;
+    int has_care=0;
+    printf("\n");
+    printf("========================================\n");
+    printf("               今日提醒 (%s)           \n", today);
+    printf("----------------------------------------\n");
+    for(OwnerNode* p=owner_head;p!=NULL;p=p->next){
+        if(strlen(p->data.birthday)>0&&strcmp(p->data.birthday,today)==0){
+            has_birthday=1;
+            printf(" 🎂 【生日提醒】业主 %s (ID:%d) 今天过生日！建议送祝福。\n", p->data.name, p->data.id);
+        }
+        if(strlen(p->data.care_date)>0){
+            char target_day[10] = "";
+            switch(tm->tm_wday) {
+                case 0: 
+                strcpy(target_day, "日"); 
+                break;
+                case 1: 
+                strcpy(target_day, "一"); 
+                break;
+                case 2: 
+                strcpy(target_day, "二"); 
+                break;
+                case 3: 
+                strcpy(target_day, "三"); 
+                break;
+                case 4: 
+                strcpy(target_day, "四"); 
+                break;
+                case 5: 
+                strcpy(target_day, "五"); 
+                break;
+                case 6: 
+                strcpy(target_day, "六"); 
+                break;
+            }
+            if(strstr(p->data.care_date,target_day)!=NULL){
+                has_care=1;
+                printf(" 💡 【关怀提醒】业主 %s (ID:%d) 今日关怀日: %s\n", p->data.name, p->data.id, p->data.care_date);
+            }
+        }
+    }
+    if(!has_birthday&&!has_care){
+        printf("  今日无特殊提醒，祝您工作顺利！\n");
+    }
+    printf("========================================\n");
+    printf("\n按回车键继续...");
+    while(getchar()!='\n'){
+
+    }
+    getchar();
+}
+
+void edit_owner_profile(int index){
+    int owner_id;
+    printf("请输入要编辑的业主ID: ");
+    scanf("%d", &owner_id);
+    OwnerNode* target=NULL;
+    for(OwnerNode* p=owner_head;p!=NULL;p=p->next){
+        if(p->data.id==owner_id){
+            target=p;
+            break;
+        }
+    }
+    if(target==NULL){
+        printf("未找到该业主！\n");
+        return;
+    }
+    printf("\n--- 正在编辑业主: %s ---\n", target->data.name);
+    printf("\n--- 选择预设标签 (最多3个，输入0结束) ---\n");
+    printf("1.独居老人  2.欠费高频  3.有宠物  4.租户  5.重点关怀\n");
+    target->data.tag_count=0;
+    int tag_choice;
+    char print_tag_name[20];
+    while(1){
+        if(target->data.tag_count>=3){
+            printf("标签已满（最多3个），选择结束。\n");
+            break;
+        }
+        printf("请选择标签序号(0结束): ");
+        scanf("%d", &tag_choice);
+        if(tag_choice==0) break;
+        if(tag_choice<1||tag_choice>5){
+            printf("输入错误，请选择1-5的序号!\n");
+            continue;
+        }
+        switch(tag_choice) {
+            case 1: 
+                strcpy(target->data.tags[target->data.tag_count], "独居老人"); 
+                strcpy(print_tag_name, "独居老人");
+                break;
+            case 2: 
+                strcpy(target->data.tags[target->data.tag_count], "欠费高频"); 
+                strcpy(print_tag_name, "欠费高频");
+                break;
+            case 3: 
+                strcpy(target->data.tags[target->data.tag_count], "有宠物"); 
+                strcpy(print_tag_name, "有宠物");
+                break;
+            case 4: 
+                strcpy(target->data.tags[target->data.tag_count], "租户"); 
+                strcpy(print_tag_name, "租户");
+                break;
+            case 5: 
+                strcpy(target->data.tags[target->data.tag_count], "重点关怀"); 
+                strcpy(print_tag_name, "重点关怀");
+                break;
+        }
+        target->data.tag_count++;
+        printf("已添加标签：%s\n", print_tag_name);
+    }
+    while(getchar()!='\n'){
+        
+    }
+    int valid_birthday=0;
+    while(!valid_birthday){
+        printf("请输入业主生日(格式:05-20，按回车键跳过): ");
+        fgets(target->data.birthday, 20, stdin);
+        int len = strlen(target->data.birthday);
+        if(len>0 && target->data.birthday[len-1]=='\n') {
+            target->data.birthday[len-1] = '\0';
+        }
+        if(strlen(target->data.birthday)==0){
+            valid_birthday=1;
+            break;
+        }
+        int month,day;
+        if(sscanf(target->data.birthday,"%d-%d",&month,&day)==2){
+            if(month>=1&&month<=12&&day>=1&&day<=31){
+                valid_birthday=1;
+            }else{
+                printf("输入错误!月份必须为1~12，日期必须为1~31。\n");
+            }
+        }else{
+            printf("输入错误!请严格按照“MM-DD”格式输入(如05-20)。\n");
+        }
+    }
+    printf("请输入特殊关怀日(如:每周三，按回车键跳过): ");
+    fgets(target->data.care_date, 20, stdin);
+    int len = strlen(target->data.care_date);
+    if(len>0 && target->data.care_date[len-1]=='\n') {
+        target->data.care_date[len-1] = '\0';
+    }
+    saveOwnerText();
+    printf("\n业主信息更新成功!\n");
+}
+
+void query_owner_by_tag(){
+    char tag_key[20];
+    printf("请输入要筛选的标签关键词(如:独居老人): ");
+    while(getchar()!='\n'){
+
+    }
+    fgets(tag_key, 20, stdin);
+    int len = strlen(tag_key);
+    if(len>0 && tag_key[len-1]=='\n'){
+        tag_key[len-1] = '\0';
+    }
+    printf("\n---------- 标签筛选结果 ----------\n");
+    int found_count=0;
+    for(OwnerNode* p=owner_head;p!=NULL;p=p->next){
+        for(int i=0;i<p->data.tag_count;i++){
+            if(strstr(p->data.tags[i],tag_key)!=NULL){
+                found_count++;
+                printf("%d.姓名:%s\tID:%d\t地址:%s\n",
+                        found_count,
+                        p->data.name,
+                        p->data.id,
+                        p->data.address);
+                break;
+            }
+        }
+    }
+    if(!found_count){
+        printf("暂无符合标签的业主\n");
+    }
+    printf("----------------------------------\n");
+}
+
+void query_birthday_this_month(){
+    time_t t=time(NULL);
+    struct tm* tm=localtime(&t);
+    int current_month=tm->tm_mon+1;
+    printf("\n---------- 本月(%d月)生日业主列表 ----------\n", current_month);
+    int found_count=0;
+    for(OwnerNode* p=owner_head;p!=NULL;p=p->next){
+        if(strlen(p->data.birthday)>0){
+            int month,day;
+            sscanf(p->data.birthday,"%d-%d",&month,&day);
+            if(month==current_month){
+                found_count++;
+                printf("%d. 姓名:%s\tID:%d\t地址:%s\t生日:%s\n",
+                        found_count,
+                        p->data.name,
+                        p->data.id,
+                        p->data.address,
+                        p->data.birthday);
+            }
+        }
+    }
+    if(!found_count){
+        printf("本月暂无业主过生日。\n");
+    }
+    printf("----------------------------------------\n");
+}
+
+void statistics_by_tags(){
+    printf("\n---------- 业主标签统计 ----------\n");
+    int total_tagged=0;
+    int count_senior = 0;//独居老人
+    int count_debt=0;//欠费高频
+    int count_pet=0;//有宠物
+    int count_tenant=0;//租户
+    int count_important=0;//重点关怀
+    for(OwnerNode* p=owner_head;p!=NULL;p=p->next){
+        if(p->data.tag_count>0){
+            total_tagged++;
+        }
+        for(int i=0;i<p->data.tag_count;i++){
+            if(strstr(p->data.tags[i], "独居老人") != NULL) count_senior++;
+            if(strstr(p->data.tags[i], "欠费高频") != NULL) count_debt++;
+            if(strstr(p->data.tags[i], "有宠物") != NULL) count_pet++;
+            if(strstr(p->data.tags[i], "租户") != NULL) count_tenant++;
+            if(strstr(p->data.tags[i], "重点关怀") != NULL) count_important++;
+        }
+    }
+    printf("区域业主总数:%d户\n",owner_count);
+    printf("已有标签业主:%d户\n",total_tagged);
+    printf("--------------------------------\n");
+    printf("独居老人:%d户\n",count_senior);
+    printf("欠费高频:%d户\n",count_debt);
+    printf("有宠物:%d户\n",count_pet);
+    printf("租户:%d户\n",count_tenant);
+    printf("重点关怀:%d户\n",count_important);
+    printf("--------------------------------\n");
+}
+
 // void test01(){
 //     struct Staff s;
 //     strcpy(s.name,"zhangsan");
@@ -1245,6 +1548,7 @@ int main()
                     }
                     if((index=staff_login(id,password))>=0){
                         printf("登录成功!\n");
+                        check_birthday_and_care();
                         flag=0;
                         break;
                     }else{
