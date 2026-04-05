@@ -17,6 +17,10 @@ void edit_owner_profile(int index);
 void query_owner_by_tag();
 void query_birthday_this_month();
 void statistics_by_tags();
+int calculate_weekly_score(int staff_id);
+void generate_weekly_report(int staff_id,int index);
+void show_weekly_rank();
+int get_my_rank(int staff_id);
 
 //物业服务人员系统
 void server_system();
