@@ -1,9 +1,9 @@
 #include "Manager.h"
 Imfor* imfor = NULL;
 Person* head = NULL;
-year = 0;
-month = 0;
-day = 0;
+int year = 0;
+int month = 0;
+int day = 0;
 void Authorize() {//管理员授权
     printf("请输入管理员ID:\n");
     long long ManagerID;
@@ -20,10 +20,10 @@ void Authorize() {//管理员授权
 }
 void Get_time() {//获取时间
     time_t current = time(NULL);
-    if (current == NULL) {
-        printf("当前时间获取失败！\n");
-        exit(1);
-    }
+    // if (current == NULL) {
+    //     printf("当前时间获取失败！\n");
+    //     exit(1);
+    // }
     struct tm* local_time = localtime(&current);
     if (local_time == NULL) {
         printf("当前时间获取失败！\n");
@@ -38,11 +38,12 @@ void Show_Imfor(Person* head, Imfor* imfor) {//展示信息
         printf("信息展示出现问题！\n");
         return;
     }
+    printf("公告：\n%s\n", imfor->announce);
     printf("当前停车位数目：%d\n楼宇数目：%d\n收费周期：%d\n单次收费金额：%d\n", imfor->Num_parking, imfor->Num_Building,
         imfor->charging_date, imfor->charging_fee);
     Person* node = head;
     while (node != NULL) {
-        printf("姓名：%-8s 年龄：%-3d 性别：%-8s 电话号：%-13lld 工作：%-8s 住址：%-3d楼\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num,node->Career,node->M_area);
+        printf("姓名：%-8s 年龄：%-3d 性别：%-8s 电话号：%-13lld 工作：%-8s 住址：%-3d楼\n", node->M_name, node->M_age, node->M_sex, node->M_phone_num, node->Career, node->M_area);
         node = node->next;
     }
 }
@@ -64,6 +65,7 @@ Imfor* Init_imfor(Imfor* imfor) {//初始化imfor对象
     imfor->Num_parking = 10;
     imfor->charging_fee = 50;
     imfor->charging_date = 6;
+    strcpy(imfor->announce, "暂无公告");
     return imfor;
 }
 Person* Init_Person(Person* person) {//初始化人
@@ -102,6 +104,7 @@ void Save(Person* head) {//保存到文件
         }
     }
     fprintf(fp, "\n");
+    fprintf(fp, "%s\n", imfor->announce);//保存公告
     Person* node = head;
     while (node != NULL) {
         fprintf(fp, "%s %s %d %d %lld %lld %d %s\n", node->M_name, node->M_sex, node->M_age, node->M_area, node->M_phone_num, node->password,
@@ -141,7 +144,7 @@ void Imfor_Read() {//读文件
     FILE* fp;
     fp = fopen(FILENAME, "r");
     if (fp == NULL) {
-        printf("文件打开遇到错误！本次操作将会新建文档\n");
+        printf("文件打开遇到错误！若不恢复本次操作将会新建文档\n");
         return;
     }
     if (fscanf(fp, "%d %d %d", &imfor->Num_Building, &imfor->charging_date, &imfor->charging_fee) != 3) {
@@ -162,6 +165,7 @@ void Imfor_Read() {//读文件
         }
     }
     imfor->Num_parking = parking_count;
+    fscanf(fp, "%s", imfor->announce);
     if (imfor == NULL) { // 如果全局imfor没初始化，先分配内存
         imfor = malloc(sizeof(Imfor));
         if (imfor == NULL) {
@@ -1243,55 +1247,222 @@ Person* Sort_Person(Person* head) {//排序
     printf("排序成功！请回到主菜单按1查看结果\n");
     return head;
 }
-void Backup(Imfor* imfor,Person* head){
-    FILE *fp;
-    fp=fopen(BACKFILENAME,"w");
-    if(imfor==NULL){
-        printf("备份服务信息失败！\n");
-    }
-    fprintf(fp,"收费信息：\n收费周期：%d月 收费金额：%d元\n",imfor->charging_date,imfor->charging_fee);
-    fprintf(fp,"楼宇数目：%d\n",imfor->Num_Building);
-    int unuse=0;
-    for(int i=0;i<imfor->Num_parking;i++){
-        if(imfor->parking[i]==-1){
-            unuse++;
+Person* Backup_or_Reverse(Imfor* imfor, Person* head) {//备份数据或恢复
+    printf("请选择:\n1.备份 2.恢复\n");
+    int backup_or_recover;
+    scanf("%d", &backup_or_recover);
+    switch (backup_or_recover) {
+    case 1:
+    {
+        FILE* fp;
+        fp = fopen(BACKFILENAME, "w");
+        if (fp == NULL) {
+            printf("文件打开遇到错误！\n");
+            return head;
         }
-    }
-    fprintf(fp,"停车位信息：\n停车位总数:%d\n 不可用个数:%d\n人员信息:\n",imfor->Num_parking,unuse);
-    Person* node=head;
-    if(head==NULL){
-        printf("备份人员信息失败！\n");
-    }
-    while(node!=NULL){
-        fprintf(fp,"姓名：%s 年龄：%d 性别：%s 住址：%d 电话号：%lld 工作：%s 密码：%lld\n", node->M_name, node->M_age, node->M_sex, node->M_area, node->M_phone_num, node->Career
-        ,node->password);
-        if(strcmp(node->Career,"业主")!=0){
-            fprintf(fp,"工作区域：\n");
-            for (int i = 0; i < node->Area_count; i++) {
+        fprintf(fp, "%d %d %d\n", imfor->Num_Building, imfor->charging_date, imfor->charging_fee);
+        /*楼宇数量，收费周期，单次收费金额*/
+        for (int i = 0; i < imfor->Num_parking; i++) {
+            if (i == 0) {
+                fprintf(fp, "%d", imfor->parking[i]);
+            }
+            else {
+                fprintf(fp, " %d", imfor->parking[i]);//停车位情况
+            }
+        }
+        fprintf(fp, "\n");
+        fprintf(fp, "%s\n", imfor->announce);//保存公告
+        Person* node = head;
+        while (node != NULL) {
+            fprintf(fp, "%s %s %d %d %lld %lld %d %s\n", node->M_name, node->M_sex, node->M_age, node->M_area, node->M_phone_num, node->password,
+                node->parking_imfor, node->Career);
+            /*姓名，性别，年龄，住址，电话号，密码，停车位占用，工作*/
+            if (strcmp(node->Career, "业主") == 0) {//工作区域
+                fprintf(fp, "0\n");
+            }
+            else {
+                for (int i = 0; i < node->Area_count; i++) {
+                    if (i == 0) {
+                        fprintf(fp, "%d", node->Area[i]);
+                    }
+                    else {
+                        fprintf(fp, " %d", node->Area[i]);
+                    }
+                }
+                fprintf(fp, "\n");
+            }
+            fprintf(fp, "%d\n", node->Count_charge);
+            for (int i = 0; i <= node->Count_charge; i++) {
                 if (i == 0) {
-                    fprintf(fp,"%d", node->Area[i]);
+                    fprintf(fp, "%d %d %d", node->Date_charge[i][0], node->Date_charge[i][1], node->Date_charge[i][2]);
                 }
                 else {
-                    fprintf(fp," %d", node->Area[i]);
+                    fprintf(fp, " %d %d %d", node->Date_charge[i][0], node->Date_charge[i][1], node->Date_charge[i][2]);
                 }
             }
-            fprintf(fp,"楼\n");
+            fprintf(fp, "\n");
+            node = node->next;
         }
-        fprintf(fp,"缴费记录：\n");
-        if (node->Count_charge == 0) {
-            fprintf(fp,"无缴费记录\n");
-        }
-        else if (strcmp(node->Career, "业主") != 0) {
-            fprintf(fp,"服务人员无需缴费\n");
-        }
-        else {
-            for (int i = 1; i < node->Count_charge; i++) {
-                fprintf(fp,"第%d次，%d年%d月%d日", i, node->Date_charge[i][0], node->Date_charge[i][1], node->Date_charge[i][2]);
-            }
-            fprintf(fp,"\n");
-        }
-        node=node->next;
+        fclose(fp);
+        fp = NULL;
+        printf("备份成功！\n");
+        break;
     }
-    printf("备份成功!\n");
-    fclose(fp);
+        case 2:
+        {
+            Person* current = head;
+            while (current != NULL) {
+                Person* next = current->next;
+                free(current);
+                current = next;
+            }
+            head = NULL;
+            FILE* fp;
+            fp = fopen(BACKFILENAME, "r");
+            if (fp == NULL) {
+                printf("恢复失败！文件不存在！\n");
+                return head;
+            }
+            if (fscanf(fp, "%d %d %d", &imfor->Num_Building, &imfor->charging_date, &imfor->charging_fee) != 3) {
+                printf("文件读取失败！\n");//读取楼宇数量，收费周期，单次收费金额
+                fclose(fp);
+                return head;
+            }
+            int parking_count = 0; // 读取到的停车位数量
+            while (fscanf(fp, "%d", &imfor->parking[parking_count]) == 1) {
+                parking_count++;
+                // 遇到换行停止
+                char c = fgetc(fp);
+                if (c == '\n' || c == EOF) {
+                    break;
+                }
+                if (c == ' ') {
+                    ungetc(c, fp);
+                }
+            }
+            imfor->Num_parking = parking_count;
+            fscanf(fp, "%s", imfor->announce);
+            if (imfor == NULL) { // 如果全局imfor没初始化，先分配内存
+                imfor = malloc(sizeof(Imfor));
+                if (imfor == NULL) {
+                    printf("全局imfor内存分配失败！\n");
+                    fclose(fp);
+                    return head;
+                }
+            }
+            int occupy = 0;
+            for (int i = 0; i < imfor->Num_parking; i++) {
+                if (imfor->parking[i] == 1 || imfor->parking[i] == -1) {
+                    occupy++;
+                }
+            }
+            if ((occupy / imfor->Num_parking) > 0.9) {
+                printf("90%的停车位被占用或关闭！！！\n");
+            }
+            /*接下来读取人员信息*/
+            while (1) {
+                char c = fgetc(fp);
+                if (c == EOF) {
+                    break;
+                }
+                else {
+                    ungetc(c, fp);
+                }
+                Person* temp_person = (Person*)malloc(sizeof(Person));
+                if (temp_person == NULL) {
+                    printf("初始化异常！\n");
+                    fclose(fp);
+                    return head;
+                }
+                //printf("\n1");
+                Init_Person(temp_person);/*姓名，性别，年龄，住址，电话号，密码，停车位占用，工作*/
+                if (fscanf(fp, "%s %s %d %d %lld %lld %d %s",
+                    temp_person->M_name,
+                    temp_person->M_sex,
+                    &temp_person->M_age,
+                    &temp_person->M_area,
+                    &temp_person->M_phone_num,
+                    &temp_person->password,
+                    &temp_person->parking_imfor,
+                    temp_person->Career) != 8) {
+                    printf("数据读取异常!\n");
+                    free(temp_person);
+                    fclose(fp);
+                    return head;
+                }
+                //printf("\n2");
+                if (strcmp(temp_person->Career, "业主") == 0) {
+                    fscanf(fp, "%d", &temp_person->Area_count);
+                    temp_person->Area[0] = 0;
+                }
+                else {
+                    int temp_Area_count = 0;
+                    while (1) {
+                        fscanf(fp, "%d", &temp_person->Area[temp_Area_count]);
+                        temp_Area_count++;
+                        char c = fgetc(fp);
+                        if (c == '\n' || c == EOF) {
+                            break;
+                        }
+                        else {
+                            ungetc(c, fp);
+                        }
+                    }
+                    temp_person->Area_count = temp_Area_count;
+                }
+                fscanf(fp, "%d", &temp_person->Count_charge);
+                int temp_Charge_count = -1;
+                //printf("\n2.5");
+                while (1) {
+                    fscanf(fp, "%d %d %d", &temp_person->Date_charge[temp_Charge_count][0],
+                        &temp_person->Date_charge[temp_Charge_count][1],
+                        &temp_person->Date_charge[temp_Charge_count][2]);
+                    temp_Charge_count++;
+                    char c = fgetc(fp);
+                    if (c == '\n' || c == EOF) {
+                        break;
+                    }
+                    else {
+                        ungetc(c, fp);
+                    }
+                }
+                temp_person->Count_charge = temp_Charge_count;
+                head = ADD_TO_LIST(head, temp_person);
+                printf("\n3");
+            }
+            Save(head);
+            fclose(fp);
+            //printf("4");
+            printf("数据恢复成功!\n");
+            break;
+        }
+        default:
+            printf("输入错误！已退出！\n");
+            break;
+    }
+    return head;
+}
+void Annouce(Imfor* imfor) {//发布公告
+TP:printf("请输入公告内容：\n");
+    char temp_annouce[MAX];
+    scanf("%s", temp_annouce);
+    printf("请确认公告内容：\n%s\n1.确定发布 2.更改内容 3.取消操作\n", temp_annouce);
+    int announce_choice;
+    scanf("%d", &announce_choice);
+    switch (announce_choice)
+    {
+    case 1:
+        strcpy(imfor->announce, temp_annouce);
+        printf("公告发布成功！\n");
+        break;
+    case 2:
+        goto TP;
+        break;
+    case 3:
+        printf("已退出\n");
+        break;
+    default:
+        printf("输入数据错误，已退出\n");
+        break;
+    }
 }

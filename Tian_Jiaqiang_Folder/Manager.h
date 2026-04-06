@@ -14,6 +14,7 @@ extern Person* head;//链表头指针
 extern int year;
 extern int month;
 extern int day;
+extern char Annoucement[MAX][MAX];
 struct Person {//人
     long long password;//密码
     long long M_phone_num;//电话号
@@ -35,6 +36,7 @@ struct Imformation {//无机物信息
     int parking[MAX];//停车位，0为空闲，1为占用,-1为关闭
     int charging_fee;//收费金额
     int charging_date;//收费周期
+    char announce[MAX];//公告
 };
 void Authorize();//授权
 void Get_time();//获取时间
@@ -53,4 +55,5 @@ Person* ModImfor(Person* head, Imfor* imfor);//更改信息
 Person* Mod_Person(Person* person);//更改人员
 Person* Sort_Person(Person* head);//排序
 void Generate();//生成账单(新增）
-void Backup(Imfor* imfor,Person* head);//备份数据到本地
+Person* Backup_or_Reverse(Imfor* imfor, Person* head);//备份数据到本地或者恢复数据
+void Annouce(Imfor* imfor);//发布公告
