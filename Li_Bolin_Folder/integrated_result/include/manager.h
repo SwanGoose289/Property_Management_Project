@@ -14,6 +14,7 @@ extern Person* head;//链表头指针
 extern int year;
 extern int month;
 extern int day;
+extern char Annoucement[MAX][MAX];
 
 struct Person {//人
     long long password;//密码
@@ -36,6 +37,7 @@ struct Imformation {//无机物信息
     int parking[MAX];//停车位，0为空闲，1为占用,-1为关闭
     int charging_fee;//收费金额
     int charging_date;//收费周期
+    char announce[MAX];//公告
 };
 int Authorize();//授权
 void Get_time();//获取时间
@@ -54,7 +56,8 @@ Person* Delimfor(Person* head);//从链表中删除对象
 Person* ModImfor(Person* head, Imfor* imfor);//更改信息
 Person* Mod_Person(Person* person);//更改人员
 Person* Sort_Person(Person* head);//排序
-void Backup(Imfor* imfor,Person* head);//备份数据到本地
+Person* Backup_or_Reverse(Imfor* imfor, Person* head);//备份数据到本地或者恢复数据
+void Annouce(Imfor* imfor);//发布公告
 
 //主界面
 void manager_system();
